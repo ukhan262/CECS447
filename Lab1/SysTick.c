@@ -68,9 +68,9 @@ void SysTick_Wait(unsigned long delay){
 void SysTick_Wait1ms(unsigned long delay){
   unsigned long i;
   for(i=0; i<delay; i++){
-    SysTick_Wait(16000);  // wait 10ms (assumes 16 MHz clock)
-			  if ((GPIO_PORTF_DATA_R  & 0x10) == 0x00){
-					flag = 1;
-				}
+    SysTick_Wait(16000);  // wait 1ms (assumes 16 MHz clock)
+		if ((GPIO_PORTF_DATA_R  & 0x10) == 0x00){
+			flag = 1;
+		}
   }
 }
