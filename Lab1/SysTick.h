@@ -43,4 +43,4 @@ void SysTick_Wait(unsigned long delay);
 
 // Time delay using busy wait.
 // This assumes 50 MHz system clock.
-void SysTick_Wait10ms(unsigned long delay);
+void SysTick_Wait1ms(unsigned long delay);
