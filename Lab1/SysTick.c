@@ -44,7 +44,7 @@
 #define NVIC_ST_RELOAD_M        0x00FFFFFF  // Counter load value
 #define GPIO_PORTF_DATA_R       (*((volatile unsigned long *)0x400253FC))
 
-extern unsigned long led, in, m, flag;       // LED, mode
+extern unsigned long led, in, flag;       // LED, mode
 // Initialize SysTick with busy wait running at bus clock.
 void SysTick_Init(void){
   NVIC_ST_CTRL_R = 0;                   // disable SysTick during setup
@@ -64,13 +64,13 @@ void SysTick_Wait(unsigned long delay){
   while(elapsedTime <= delay);
 }
 // Time delay using busy wait.
-// This assumes 50 MHz system clock.
-void SysTick_Wait10ms(unsigned long delay){
+
+void SysTick_Wait1ms(unsigned long delay){
   unsigned long i;
   for(i=0; i<delay; i++){
-    SysTick_Wait(160000);  // wait 10ms (assumes 16 MHz clock)
-		if ((GPIO_PORTF_DATA_R & 0x10) == 0x00){
-			flag = 1;
-		}
+    SysTick_Wait(16000);  // wait 10ms (assumes 16 MHz clock)
+			  if ((GPIO_PORTF_DATA_R  & 0x10) == 0x00){
+					flag = 1;
+				}
   }
 }

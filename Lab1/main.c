@@ -75,23 +75,20 @@ void Init_PortF(void){ volatile unsigned long delay;
 }
  
 
-unsigned long led, in, m;       // LED, mode
-volatile unsigned long SW1;
-extern volatile unsigned long flag;
+unsigned long  time, flag;       
 
 int main(void){  
   Init_PortF();            // make PF1,PF2,PF3 output and PF4 input
 	SysTick_Init();          // initialize SysTick timer
-	//SW1 = 1;
-	m = 100;
+	time = 1000;
   while(1){
-	led = led^0x04;            // toggle blue LED, PF2
-  GPIO_PORTF_DATA_R = led;   // output 
-  SysTick_Wait10ms(m);     // 1s delay
-	if (flag == 1)
+		GPIO_PORTF_DATA_R ^= 0x04;       // toggle PF2
+    SysTick_Wait1ms(time);          // 1s delay
+		if (flag == 1)
 		{
-			m= m+100;
-		}
+			time = time +1000;
+		}   
+		flag =0;
 	}
 }
 
