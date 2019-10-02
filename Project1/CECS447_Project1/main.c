@@ -29,12 +29,18 @@ void SysTick_Handler(void);
 void SysTick_Init(unsigned long period); //Initialize sysTick
 void freqCal(void);
 
+
 // mode 1 = sawtooth
+void Sawtooth(void);
 // mode 2 = triangle
+void Triangle(void);
 // mode 3 = square
+void Square(void);
 // mode 4 = sine
+void Sine(void);
 // mode 5 = tone generator
-	
+void ToneGenerator(void);
+
 int main(void){
 	PLL_Init();
 	SysTick_Init(50);
@@ -46,17 +52,12 @@ int main(void){
 	
 	while(1){
     while (mode == 1){
-			 GPIO_PORTF_DATA_R = 0x08; 
-			//sawtooth
-			for (i = 0; i < 256; i++){
-				 GPIO_PORTB_DATA_R++; 
-				 Delay(63);
-			}// for
-		}// mode == 1
+			GPIO_PORTF_DATA_R = 0x08; 
+			Sawtooth();
+		}
 		
-		while(mode == 2){ 
-			 GPIO_PORTF_DATA_R = 0x0A;
-			//triangle
+		while(mode == 2){
+			GPIO_PORTF_DATA_R = 0x0A;
 			GPIO_PORTB_DATA_R = 0x00;
 			for (i = 0; i < 255; i++) {
 				GPIO_PORTB_DATA_R++;
@@ -170,4 +171,22 @@ void freqCal(void){// y =0.0567x+262
        ADCvalue = ADC0_InSeq3();
 		   freq = 0.0567*ADCvalue +262;
 			 time = (1/freq/256/0.000001)-3.895;
+}
+void Sawtooth(void){
+	for (i = 0; i < 256; i++){
+				 GPIO_PORTB_DATA_R++; 
+				 Delay(63);
+			}
+}
+void Triangle(void){
+	GPIO_PORTB_DATA_R = 0x00;
+	for (i = 0; i < 255; i++){
+		GPIO_PORTB_DATA_R ++;
+		Delay(31);
+	}
+	GPIO_PORTB_DATA_R = 0xFF;
+	for (i = 0; i < 255; i++){
+		GPIO_PORTB_DATA_R --;
+		Delay(31);
+	}	
 }
