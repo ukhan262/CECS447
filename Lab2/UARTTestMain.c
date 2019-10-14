@@ -1,16 +1,41 @@
-// CECS 447 Project
+// UARTTestMain.c
+// Runs on LM4F120/TM4C123
+// Used to test the UART.c driver
+// Daniel Valvano
+// September 12, 2013
 
-#include "TExaS.h"
-#include "tm4c123gh6pm.h"
+/* This example accompanies the book
+   "Embedded Systems: Real Time Interfacing to Arm Cortex M Microcontrollers",
+   ISBN: 978-1463590154, Jonathan Valvano, copyright (c) 2013
+
+ Copyright 2013 by Jonathan W. Valvano, valvano@mail.utexas.edu
+    You may use, edit, run or distribute this file
+    as long as the above copyright notice remains
+ THIS SOFTWARE IS PROVIDED "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED
+ OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE.
+ VALVANO SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL,
+ OR CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
+ For more information about my classes, my research, and my books, see
+ http://users.ece.utexas.edu/~valvano/
+ */
+
+// U0Rx (VCP receive) connected to PA0
+// U0Tx (VCP transmit) connected to PA1
+
 #include "PLL.h"
-#include "ADCSWTrigger.h"
+#include "UART.h"
+#include "tm4c123gh6pm.h"
 
-unsigned long mode; // Current mode 
-unsigned long i;		// variable used for loop
+//---------------------OutCRLF---------------------
+// Output a CR,LF to UART to go to a new line
+// Input: none
+// Output: none
 volatile unsigned int delay;
-volatile unsigned long ADCvalue;	
-double time;
-
+unsigned int i;
+char string[20];  // global to assist in debugging  
+unsigned long n;
+unsigned char c, previous;
 const unsigned char SineWave[256] = {128,131,134,137,140,143,146,149,152,155,158,161,165,167,170,173,176,179,182,185,188,
 190,193,196,198,201,203,206,208,211,213,215,218,220,222,224,226,228,230,232,233,235,237,238,240,241,243,244,245,246,248,249,
 249,250,251,252,253,253,254,254,254,255,255,255,255,255,255,255,254,254,254,253,253,252,251,250,249,249,248,246,245,244,243,
@@ -27,70 +52,112 @@ void Delay (unsigned int);
 void EnableInterrupts(void);
 void SysTick_Handler(void);
 void SysTick_Init(unsigned long period); //Initialize sysTick
-void freqCal(void);
 
-
-// mode 1 = sawtooth
-void Sawtooth(void);
-// mode 2 = triangle
-void Triangle(void);
-// mode 3 = square
-void Square(void);
-// mode 4 = sine
-void Sine(void);
-// mode 5 = tone generator
-void ToneGenerator(void);
-
+void OutCRLF(void){
+  UART_OutChar(CR);
+  UART_OutChar(LF);
+}
+//debug code
 int main(void){
-	PLL_Init();
-	SysTick_Init(50);
+  
+  PLL_Init();
+  UART_Init();
 	PortB_Init();
 	PortF_Init();
-	ADC0_InitSWTriggerSeq3_Ch1();
-	mode = 5;	
-  
+	SysTick_Init(50);	
+	
+	previous = 'r';
 	
 	while(1){
-    while (mode == 1){
-			GPIO_PORTF_DATA_R = 0x08; 
-			Sawtooth();
+		
+		c = UART_InChar();
+		
+		if (c =='r') 
+		{	
+			previous = 'r';
+		}
+		else if (c =='t') 
+		{
+			previous = 't';
+		}
+		else if (c =='s') 
+		{
+			previous = 's';
+		}
+		else if (c =='q') 
+		{
+			previous = 'q';
+		}
+		else if (c =='0') 
+		{
+			previous = previous;
 		}
 		
-		while(mode == 2){
-			GPIO_PORTF_DATA_R = 0x0A;
-			Triangle();
-    }
-		
-		while(mode == 3){
-			 GPIO_PORTF_DATA_R = 0x02;
-			//square
-				GPIO_PORTB_DATA_R = 0xFF;
-			  Delay(8330);
-				GPIO_PORTB_DATA_R = 0x00;
-        Delay(8330);		
-		}// mode == 3
-	 
-			while(mode == 4){         
-			 GPIO_PORTF_DATA_R = 0x08;         
-      //sine 
-			    for (i = 0; i < 255; i++){
-           	 GPIO_PORTB_DATA_R = SineWave[i];
-					   Delay(62);
-				 }
-    }// mode == 4
+		if (previous == 'r')
+		{
+			//sawtooth
+			GPIO_PORTF_DATA_R = 0x04;
+			for (i = 0; i < 256; i++){
+				GPIO_PORTB_DATA_R++; 
+				Delay(63);
+			}
 			
-			while(mode == 5){ 
-			 GPIO_PORTF_DATA_R = 0x04; 				
-      //tone generator 
-			   freqCal();
-				 for (i = 0; i < 255; i++){
-           	 GPIO_PORTB_DATA_R = SineWave[i];
-					   Delay(time);
-				 }
-             				 
-    }// mode == 5
-	}// while(1)
-}// main
+			UART_OutString("sawtooth wave is displayed");
+			OutCRLF();
+		}
+		
+		else if (previous == 't')
+		{
+			//triangle
+			GPIO_PORTF_DATA_R = 0x0A;
+			
+			GPIO_PORTB_DATA_R = 0x00;
+			for (i = 0; i < 255; i++) {
+				GPIO_PORTB_DATA_R++;
+				Delay(31);				
+			}
+			GPIO_PORTB_DATA_R = 0xFF;
+			for (i = 0; i < 255 ; i++) {
+				GPIO_PORTB_DATA_R--;
+				Delay(31);
+			}
+			
+			UART_OutString("traingle wave is displayed");
+			OutCRLF();
+		}
+		
+		else if (previous == 's')
+		{
+			//sine
+			GPIO_PORTF_DATA_R = 0x08;
+			
+			for (i = 0; i < 255; i++){
+				GPIO_PORTB_DATA_R = SineWave[i];
+				Delay(62);
+			}
+			UART_OutString("sine wave is displayed");
+			OutCRLF();
+		}
+		
+		else if (previous == 'q')
+		{
+			//square
+			GPIO_PORTF_DATA_R = 0x02;
+			
+			GPIO_PORTB_DATA_R = 0xFF;
+			Delay(8330);
+			GPIO_PORTB_DATA_R = 0x00;
+      Delay(8330);
+			
+			UART_OutString("square wave is displayed");
+			OutCRLF();
+		}
+		else{ // 0 case
+			// previous = previous
+		}
+	}				
+}
+
 
 void PortB_Init(void) { volatile unsigned long delay;
 	SYSCTL_RCGC2_R |= 0x00000002;     // B clock
@@ -136,48 +203,10 @@ void SysTick_Init(unsigned long period){
 }
 void SysTick_Handler(void){
 if (delay > 0)
-   delay --; 
+    delay--; 
     
 }
 void Delay (unsigned int count){
  delay = count;
  while(delay !=0);
-}
-//ISR handler for port F
-void GPIOPortF_Handler(void){
-  if (GPIO_PORTF_RIS_R&0x10){    //SW1 pressed
-     GPIO_PORTF_ICR_R = 0x10;    // acknowledge flag4	
-		 if (mode >= 5) {
-			mode = 1;
-			// GPIO_PORTF_DATA_R = 0x04;       // toggle PF2
-		} // if
-		 else {
-			 //GPIO_PORTF_DATA_R = 0x02;       // toggle PF2
-		   mode = mode + 1;
-		} // else 
-	} // if 
-}
-void freqCal(void){// y =0.0567x+262
-	     double freq;
-       ADCvalue = ADC0_InSeq3();
-		   freq = 0.0567*ADCvalue +262;
-			 time = (1/freq/256/0.000001)-3.895;
-}
-void Sawtooth(void){
-	for (i = 0; i < 256; i++){
-				 GPIO_PORTB_DATA_R++; 
-				 Delay(63);
-			}
-}
-void Triangle(void){
-	GPIO_PORTB_DATA_R = 0x00;
-	for (i = 0; i < 255; i++){
-		GPIO_PORTB_DATA_R ++;
-		Delay(31);
-	}
-	GPIO_PORTB_DATA_R = 0xFF;
-	for (i = 0; i < 255; i++){
-		GPIO_PORTB_DATA_R --;
-		Delay(31);
-	}	
 }
