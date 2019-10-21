@@ -1,4 +1,5 @@
 // CECS 447 Project
+// Umar Khan and Ahmed Hayat
 // Tone Generator
 
 #include "TExaS.h"
